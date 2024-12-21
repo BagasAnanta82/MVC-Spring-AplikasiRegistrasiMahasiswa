@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Transkrip</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #2a2a2a; /* Warna gelap */
+            color: #ffffff; /* Teks putih */
+        }
+        .navbar {
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .navbar-brand {
+            color: #00d3cc;
+        }
+        .navbar-brand:hover {
+            color: #ffffff; /* Biru kehijauan lebih terang saat hover */
+        }
+        .table {
+            color: #ffffff;
+        }
+        .table thead {
+            background-color: #444444;
+        }
+        .table tbody tr:hover {
+            background-color: #555555;
+        }
+
+        @media print {
+            body {
+                background-color: #ffffff !important; /* Latar belakang putih */
+                color: #000000 !important; /* Teks hitam */
+            }
+            .navbar, .navbar * {
+                background-color: #ffffff !important; /* Navbar putih */
+                color: #000000 !important; /* Teks hitam */
+            }
+            .table {
+                color: #000000 !important; /* Teks tabel hitam */
+                border: 1px solid #000000 !important; /* Tambahkan border tabel */
+                border-collapse: collapse; /* Gabungkan border */
+            }
+            .table thead {
+                background-color: #f0f0f0 !important; /* Kepala tabel abu-abu terang */
+            }
+            .table tbody tr {
+                background-color: #ffffff !important; /* Baris tabel putih */
+            }
+            .table th, .table td {
+                border: 1px solid #000000 !important; /* Border hitam di sel */
+                padding: 8px; /* Tambahkan jarak padding */
+            }
+            .btn {
+                display: none; /* Sembunyikan tombol cetak */
+            }
+            .mb-3 {
+                margin-bottom: 1rem; /* Jarak untuk informasi mahasiswa */
+            }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard_mahasiswa">Dashboard Mahasiswa - Transkrip Nilai</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Transkrip Mata Kuliah</h2>
+
+    <!-- Informasi Mahasiswa -->
+    <div class="mb-3">
+        <p><strong>NIM:</strong> <span id="nimMahasiswa">Loading...</span></p>
+        <p><strong>Prodi:</strong> <span id="prodiMahasiswa">Loading...</span></p>
+    </div>
+
+    <button class="btn btn-primary mb-3" onclick="printTranskrip()">Cetak Transkrip</button>
+    <table class="table table-dark table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>Nama Mata Kuliah</th>
+            <th>Kode</th>
+            <th>SKS</th>
+            <th>UTS</th>
+            <th>UAS</th>
+            <th>Kuis</th>
+            <th>Total</th>
+            <th>Grade</th>
+        </tr>
+        </thead>
+        <tbody id="transkripTable">
+        <!-- Data diisi oleh JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<script th:inline="javascript">
+    const userId = /*[[${mahasiswaId}]]*/ 0;
+</script>
+<script>
+    // Fungsi untuk mencetak konten layar
+    const printTranskrip = () => {
+        window.print();
+    };
+
+    // Fetch data mahasiswa dan transkrip
+    const fetchTranskrip = async () => {
+        const response = await fetch(`/api/mahasiswa/${userId}`);
+        const mahasiswa = await response.json();
+
+        document.getElementById('nimMahasiswa').textContent = mahasiswa.nim;
+        document.getElementById('prodiMahasiswa').textContent = mahasiswa.prodi;
+
+        const tableBody = document.getElementById('transkripTable');
+        tableBody.innerHTML = '';
+
+        mahasiswa.mataKuliah.forEach((mataKuliah) => {
+            const row = `
+        <tr>
+            <td>${mataKuliah.nama}</td>
+            <td>${mataKuliah.kode}</td>
+            <td>${mataKuliah.sks}</td>
+            <td>${mataKuliah.uts}</td>
+            <td>${mataKuliah.uas}</td>
+            <td>${mataKuliah.kuis}</td>
+            <td>${mataKuliah.total}</td>
+            <td>${mataKuliah.grade}</td>
+        </tr>
+    `;
+            tableBody.innerHTML += row;
+        });
+    };
+
+
+    // Load transkrip on page load
+    fetchTranskrip();
+</script>
+</body>
+</html>

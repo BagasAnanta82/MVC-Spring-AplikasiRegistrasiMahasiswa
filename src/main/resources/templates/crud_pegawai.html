@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Pegawai</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #2a2a2a;
+            color: #ffffff;
+        }
+        .navbar, .modal-content {
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .navbar-brand{
+            color: #00d3cc;
+        }
+        .navbar-brand:hover{
+            color: #ffffff; /* Biru kehijauan lebih terang saat hover */
+        }
+        .btn-primary {
+            background-color: #00a39c;
+            border-color: #00a39c;
+        }
+        .btn-primary:hover {
+            background-color: #00d3cc;
+        }
+        .table {
+            color: #ffffff;
+        }
+        .table thead {
+            background-color: #444444;
+        }
+        .table tbody tr:hover {
+            background-color: #555555;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard_pegawai">Dashboard Pegawai - Manajemen Pegawai</a>
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasPegawai" aria-controls="offcanvasPegawai">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</nav>
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasPegawai" aria-labelledby="offcanvasPegawaiLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasPegawaiLabel">Menu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="list-group">
+            <li class="list-group-item"><a href="/dashboard_pegawai/mahasiswa">Manage Mahasiswa</a></li>
+            <li class="list-group-item"><a href="/dashboard_pegawai/pegawai">Manage Pegawai</a></li>
+            <li class="list-group-item"><a href="/dashboard_pegawai/matakuliah">Manage Mata Kuliah</a></li>
+            <li class="list-group-item"><a href="/dashboard_pegawai/lookup_nim">Cek Nim - MataKuliah</a></li>
+            <li class="list-group-item"><a href="/api/mahasiswa/{id}/matakuliah">Cek MataKuliah</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Daftar Pegawai</h2>
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addPegawaiModal">Tambah Pegawai</button>
+    <table class="table table-dark table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nama</th>
+            <th>NIP</th>
+            <th>Posisi</th>
+            <th>Aksi</th>
+        </tr>
+        </thead>
+        <tbody id="pegawaiTable">
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Tambah/Edit Pegawai -->
+<div class="modal fade" id="addPegawaiModal" tabindex="-1" aria-labelledby="addPegawaiModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPegawaiModalLabel">Tambah Pegawai</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="pegawaiForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="nip" class="form-label">NIP</label>
+                        <input type="text" class="form-control" id="nip" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="posisi" class="form-label">Posisi</label>
+                        <input type="text" class="form-control" id="posisi" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="submitButton">Simpan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let editingPegawaiId = null; // ID Pegawai yang sedang diedit
+
+    // Fetch Pegawai Data
+    const fetchPegawai = async () => {
+        const response = await fetch('/api/pegawai');
+        const data = await response.json();
+        const tableBody = document.getElementById('pegawaiTable');
+        tableBody.innerHTML = ''; // Clear existing rows
+        data.forEach(pegawai => {
+            const row = `
+          <tr>
+            <td>${pegawai.id}</td>
+            <td>${pegawai.username}</td>
+            <td>${pegawai.nip}</td>
+            <td>${pegawai.posisi}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="editPegawai(${pegawai.id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deletePegawai(${pegawai.id})">Hapus</button>
+            </td>
+          </tr>
+        `;
+            tableBody.innerHTML += row;
+        });
+    };
+
+    // Add/Edit Pegawai
+    document.getElementById('pegawaiForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const nip = document.getElementById('nip').value;
+        const posisi = document.getElementById('posisi').value;
+
+        if (editingPegawaiId) {
+            // Update existing Pegawai
+            await fetch(`/api/pegawai/${editingPegawaiId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, nip, posisi, role: 'PEGAWAI' })
+            });
+        } else {
+            // Add new Pegawai
+            await fetch('/api/pegawai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, nip, posisi, role: 'PEGAWAI' })
+            });
+        }
+
+        fetchPegawai();
+        document.getElementById('pegawaiForm').reset();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addPegawaiModal'));
+        modal.hide();
+        editingPegawaiId = null; // Reset editing ID
+        document.getElementById('addPegawaiModalLabel').innerText = 'Tambah Pegawai';
+        document.getElementById('submitButton').innerText = 'Simpan';
+    });
+
+    // Edit Pegawai
+    const editPegawai = async (id) => {
+        editingPegawaiId = id;
+        const response = await fetch(`/api/pegawai/${id}`);
+        const pegawai = await response.json();
+
+        // Fill form with existing data
+        document.getElementById('username').value = pegawai.username;
+        document.getElementById('password').value = ''; // Leave password empty for edit
+        document.getElementById('nip').value = pegawai.nip;
+        document.getElementById('posisi').value = pegawai.posisi;
+
+        document.getElementById('addPegawaiModalLabel').innerText = 'Edit Pegawai';
+        document.getElementById('submitButton').innerText = 'Update';
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('addPegawaiModal'));
+        modal.show();
+    };
+
+    // Delete Pegawai
+    const deletePegawai = async (id) => {
+        if (confirm('Yakin ingin menghapus pegawai ini?')) {
+            await fetch(`/api/pegawai/${id}`, { method: 'DELETE' });
+            fetchPegawai();
+        }
+    };
+
+    // Load data on page load
+    fetchPegawai();
+
+</script>
+</body>
+</html>

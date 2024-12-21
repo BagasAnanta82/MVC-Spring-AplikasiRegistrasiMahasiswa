@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Mahasiswa</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #2a2a2a; /* Warna gelap */
+            color: #ffffff; /* Teks putih */
+        }
+        .navbar, .modal-content {
+            background-color: #333333; /* Navbar dan modal gelap */
+            color: #ffffff;
+        }
+        .navbar-brand{
+            color: #00d3cc;
+        }
+        .navbar-brand:hover{
+            color: #ffffff; /* Biru kehijauan lebih terang saat hover */
+        }
+        .btn-primary {
+            background-color: #00a39c;
+            border-color: #00a39c;
+        }
+        .btn-primary:hover {
+            background-color: #00d3cc; /* Hover tombol biru kehijauan lebih terang */
+        }
+        .table {
+            color: #ffffff;
+        }
+        .table thead {
+            background-color: #444444;
+        }
+        .table tbody tr:hover {
+            background-color: #555555;
+        }
+    </style>
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard_pegawai">Dashboard Pegawai - Manajemen Mahasiswa</a>
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasPegawai" aria-controls="offcanvasPegawai">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</nav>
+
+<!-- Sidebar -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasPegawai" aria-labelledby="offcanvasPegawaiLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasPegawaiLabel">Menu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="list-group">
+            <li class="list-group-item"><a href="/dashboard_pegawai/mahasiswa">Manage Mahasiswa</a></li>
+            <li class="list-group-item"><a href="/dashboard_pegawai/pegawai">Manage Pegawai</a></li>
+            <li class="list-group-item"><a href="/dashboard_pegawai/matakuliah">Manage Mata Kuliah</a></li>
+            <li class="list-group-item"><a href="/dashboard_pegawai/lookup_nim">Cek Nim - MataKuliah</a></li>
+            <li class="list-group-item"><a href="/api/mahasiswa/{id}/matakuliah">Cek MataKuliah</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container mt-4">
+    <h2 class="mb-4">Daftar Mahasiswa</h2>
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addMahasiswaModal">Tambah Mahasiswa</button>
+    <table class="table table-dark table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nama</th>
+            <th>NIM</th>
+            <th>Program Studi</th>
+            <th>Aksi</th>
+        </tr>
+        </thead>
+        <tbody id="mahasiswaTable">
+        <!-- Data akan diisi melalui JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Tambah/Edit Mahasiswa -->
+<div class="modal fade" id="addMahasiswaModal" tabindex="-1" aria-labelledby="addMahasiswaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMahasiswaModalLabel">Tambah Mahasiswa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="mahasiswaForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="nim" class="form-label">NIM</label>
+                        <input type="text" class="form-control" id="nim" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="prodi" class="form-label">Program Studi</label>
+                        <input type="text" class="form-control" id="prodi" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="submitButton">Simpan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let editingMahasiswaId = null; // ID Mahasiswa yang sedang diedit
+
+    // Fetch Mahasiswa Data
+    const fetchMahasiswa = async () => {
+        const response = await fetch('/api/mahasiswa');
+        const data = await response.json();
+        const tableBody = document.getElementById('mahasiswaTable');
+        tableBody.innerHTML = ''; // Clear existing rows
+        data.forEach(mahasiswa => {
+            const row = `
+          <tr>
+            <td>${mahasiswa.id}</td>
+            <td>${mahasiswa.username}</td>
+            <td>${mahasiswa.nim}</td>
+            <td>${mahasiswa.prodi}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="editMahasiswa(${mahasiswa.id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteMahasiswa(${mahasiswa.id})">Hapus</button>
+            </td>
+          </tr>
+        `;
+            tableBody.innerHTML += row;
+        });
+    };
+
+    // Add/Edit Mahasiswa
+    document.getElementById('mahasiswaForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const nim = document.getElementById('nim').value;
+        const prodi = document.getElementById('prodi').value;
+
+        if (editingMahasiswaId) {
+            // Update existing Mahasiswa
+            await fetch(`/api/mahasiswa/${editingMahasiswaId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, nim, prodi, role: 'MAHASISWA' })
+            });
+        } else {
+            // Add new Mahasiswa
+            await fetch('/api/mahasiswa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, nim, prodi, role: 'MAHASISWA' })
+            });
+        }
+
+        fetchMahasiswa();
+        document.getElementById('mahasiswaForm').reset();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addMahasiswaModal'));
+        modal.hide();
+        editingMahasiswaId = null; // Reset editing ID
+        document.getElementById('addMahasiswaModalLabel').innerText = 'Tambah Mahasiswa';
+        document.getElementById('submitButton').innerText = 'Simpan';
+    });
+
+    // Edit Mahasiswa
+    const editMahasiswa = async (id) => {
+        editingMahasiswaId = id;
+        const response = await fetch(`/api/mahasiswa/${id}`);
+        const mahasiswa = await response.json();
+
+        // Fill form with existing data
+        document.getElementById('username').value = mahasiswa.username;
+        document.getElementById('password').value = ''; // Leave password empty for edit
+        document.getElementById('nim').value = mahasiswa.nim;
+        document.getElementById('prodi').value = mahasiswa.prodi;
+
+        document.getElementById('addMahasiswaModalLabel').innerText = 'Edit Mahasiswa';
+        document.getElementById('submitButton').innerText = 'Update';
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('addMahasiswaModal'));
+        modal.show();
+    };
+
+    // Delete Mahasiswa
+    const deleteMahasiswa = async (id) => {
+        if (confirm('Yakin ingin menghapus mahasiswa ini?')) {
+            await fetch(`/api/mahasiswa/${id}`, { method: 'DELETE' });
+            fetchMahasiswa();
+        }
+    };
+
+    // Load data on page load
+    fetchMahasiswa();
+</script>
+</body>
+</html>
